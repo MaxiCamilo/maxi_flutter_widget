@@ -32,6 +32,8 @@ class _DynamicViewState extends ReactiveState<DynamicView> implements DynamicVie
   late Duration duration;
   late Curve curve;
 
+  int _id = 0;
+
   @override
   Result<void> performInitiation() {
     currentWidget = widget.child;
@@ -43,7 +45,8 @@ class _DynamicViewState extends ReactiveState<DynamicView> implements DynamicVie
       heart.attachStream(
         stream: stream,
         onData: (x) {
-          currentWidget = x;
+          _id += 1;
+          currentWidget = SizedBox(key: ValueKey(_id), child: x);
           setState(() {});
         },
       );
@@ -64,7 +67,8 @@ class _DynamicViewState extends ReactiveState<DynamicView> implements DynamicVie
   @override
   Result<void> changeWidget(Widget newWidget) => resultScopeVoid(() {
     checkDisposed().$;
-    currentWidget = newWidget;
+    _id += 1;
+    currentWidget = SizedBox(key: ValueKey(_id), child: newWidget);
     setState(() {});
   });
 
@@ -74,7 +78,8 @@ class _DynamicViewState extends ReactiveState<DynamicView> implements DynamicVie
 
     bool changed = false;
     if (widget != null) {
-      currentWidget = widget;
+      _id += 1;
+      currentWidget = SizedBox(key: ValueKey(_id), child: widget);
       changed = true;
     }
     if (duration != null) {

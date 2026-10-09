@@ -16,7 +16,7 @@ mixin WidgetUtils {
 
     final ui.Image image = boundary.toImageSync(pixelRatio: MediaQuery.devicePixelRatioOf(key.currentContext!));
 
-    return ResultValue(image);
+    return SuccessfulResult(image);
   }
 
   static FutureResult<Uint8List> screenshotByte({required GlobalKey key}) => futureScope(() async {
@@ -26,6 +26,6 @@ mixin WidgetUtils {
 
     if (byteData == null) return Result.error("Failed to capture screenshot");
 
-    return ResultValue(byteData.buffer.asUint8List());
+    return SuccessfulResult(byteData.buffer.asUint8List());
   });
 }

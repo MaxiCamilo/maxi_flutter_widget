@@ -24,16 +24,15 @@ abstract class ReactiveState<T extends StatefulWidget> extends State<T> implemen
     return _heart!;
   }
 
-  Result<void> performInitiation() => Result.ok;  
+  Result<void> performInitiation() => Result.ok;
 
-  
   @override
   @nonVirtual
   void initState() {
     super.initState();
     try {
       final result = performInitiation();
-      if (result is ResultValue<void>) {
+      if (result is SuccessfulResult<void>) {
         _initiated = true;
       } else {
         throw result;

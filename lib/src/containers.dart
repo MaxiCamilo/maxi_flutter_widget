@@ -3,3 +3,4 @@ export 'containers/reactive_state.dart';
 export 'containers/one_stack_view.dart';
 export 'containers/dynamic_view.dart';
 export 'containers/maxi_scroll.dart';
+export 'containers/maxi_fade_container.dart';

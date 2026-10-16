@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:maxi_dart_framework/maxi_dart_framework.dart';
+import 'package:maxi_flutter_widget/src/containers/logic/build_empty_image.dart';
 
 /// Hace un crossfade entre el hijo anterior y el nuevo.
 ///
@@ -96,7 +99,17 @@ class _OneStackViewState extends State<OneStackView> with SingleTickerProviderSt
     if (boundary != null && boundary.hasSize) {
       // Después del paint: la capa contiene el widget viejo, totalmente opaco
       // (el FadeTransition está afuera del boundary).
-      _snapshot = boundary.toImageSync(pixelRatio: _dpr);
+      if (boundary.size == Size.zero) {
+        scheduleMicrotask(
+          () => futureScopeVoid(() async {
+            _snapshot = await $$_(BuildEmptyImage(width: 1, height: 1).run());
+            setState(() => _child = widget.child);
+            _ctrl.forward(from: 0);
+          }),
+        );
+      } else {
+        _snapshot = boundary.toImageSync(pixelRatio: _dpr);
+      }
     }
 
     setState(() => _child = widget.child);

@@ -11,6 +11,7 @@ class MaxiScroll extends StatefulWidget {
 
   final double verticalScrollPadding;
   final double horizontalScrollPadding;
+  final double scrollOffset;
 
   final void Function(ScrollController)? onScrollCreated;
 
@@ -25,6 +26,7 @@ class MaxiScroll extends StatefulWidget {
     this.expand = false,
     this.horizontalScrollPadding = 10.0,
     this.verticalScrollPadding = 10.0,
+    this.scrollOffset = 0,
   });
 
   @override
@@ -32,7 +34,7 @@ class MaxiScroll extends StatefulWidget {
 }
 
 class _MaxiScrollState extends State<MaxiScroll> {
-  final ScrollController _scrollController = ScrollController();
+  late final ScrollController _scrollController = ScrollController(initialScrollOffset: widget.scrollOffset);
 
   @override
   void initState() {

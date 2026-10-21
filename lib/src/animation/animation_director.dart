@@ -1,6 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:maxi_dart_framework/maxi_dart_framework.dart';
-import 'package:maxi_flutter_widget/src/animation/animated_value.dart';
+import 'package:maxi_flutter_widget/maxi_flutter_widget.dart';
 
 /// Coordina varios valores animados por key con UN solo Ticker.
 ///
@@ -14,17 +16,22 @@ class AnimationDirector with DisposableMixin, WithLifecycleScopeMixin {
   final Curve defaultCurve;
   final TickerProvider vsync;
 
-  final Map<Object, AnimationTrack<Object?>> _tracks = <Object, AnimationTrack<Object?>>{};
-  final Map<Object, dynamic> _fixedValues = {};
+  //final Map<Object, AnimationTrack<Object?>> _tracks = <Object, AnimationTrack<Object?>>{};
+  //final Map<Object, dynamic> _fixedValues = {};
+  final Map<Object, dynamic> _values = {};
+
   final List<void Function(AnimationDirector)> _listeners = [];
 
   late final AnimationTrackScheduler _scheduler = heart.attachChild(AnimationTrackScheduler(vsync: vsync, onFrame: _notifyListeners));
+  late final StreamController<(Object, dynamic)> _streamController;
 
   new({required this.defaultDuration, required this.defaultCurve, required this.vsync}) {
     heart.onDispose(() {
       _listeners.clear();
       _scheduler.dispose();
     });
+
+    _streamController = heart.attachStreamController(StreamController<(Object, dynamic)>.broadcast());
   }
 
   static void _noop() {}
@@ -65,7 +72,20 @@ class AnimationDirector with DisposableMixin, WithLifecycleScopeMixin {
 
   bool get isAnimating => _scheduler.isAnimating;
 
-  bool contains(Object key) => _tracks.containsKey(key);
+  bool contains(Object key) => _values.containsKey(key);
+
+  Result<Stream<T>> buildValueListener<T>(Object key) => resultScopeValue(() {
+    checkDisposed().$;
+    return _streamController.stream.where((event) => event.$1 == key).map((event) => event.$2).where((x) {
+      if (x is T) {
+        return true;
+      } else if (x is AnimationTrack && x.current is T) {
+        return true;
+      }
+
+      return false;
+    }).cast<T>();
+  });
 
   void stop([Object? key]) {
     if (isDisposed) {
@@ -75,9 +95,14 @@ class AnimationDirector with DisposableMixin, WithLifecycleScopeMixin {
       _scheduler.stopAll();
       return;
     }
-    final track = _tracks[key];
-    if (track != null) {
-      _scheduler.stop(track);
+
+    final value = _values[key];
+    if (value == null) {
+      return;
+    }
+
+    if (value is AnimationTrack) {
+      _scheduler.stop(value);
     }
   }
 
@@ -91,36 +116,78 @@ class AnimationDirector with DisposableMixin, WithLifecycleScopeMixin {
 
   /// Valor actual (interpolado) de [key]. Si no existe y se pasa
   /// [defaultValue], se crea con ese valor inicial.
-  T $<T extends Object>(Object key, [T? defaultValue]) {
-    final track = _tracks[key];
-    if (track != null) {
-      final current = track.current;
-      if (current is T) {
-        return current;
+  T $<T extends Object>(Object key, [T? value]) {
+    final exists = _values[key];
+    if (exists != null) {
+      if (exists is AnimationTrack) {
+        if (exists is AnimationTrack<T>) {
+          //if (value != exists.initValue) {
+          //  set<T>(key, value!);
+          //}
+          return exists.current;
+        } else {
+          throw StateError('Type mismatch for key $key: requested $T, but the value is ${exists.runtimeType}');
+        }
       }
-      if (current is num && T == double) {
-        return current.toDouble() as T;
+
+      if (exists is! T) {
+        throw StateError('Type mismatch for key $key: requested $T, but the value is ${exists.runtimeType}');
       }
-      throw StateError('Type mismatch for key $key: requested $T, but the track holds ${current.runtimeType}.');
+      /*
+      if (value != null && value != exists) {
+        _values[key] = value;
+        _streamController.add((key, value));
+      }*/
+
+      return exists;
     }
 
+    if (const [double, Color, int, num].contains(T)) {
+      final tracket = _createTrack<T>(value);
+      _values[key] = tracket;
+      _streamController.add((key, tracket.current));
+      return tracket.current as T;
+    }
+    //if (const [bool, Curve, Duration, AnimationScriptInterface].contains(T) || (value != null && value is AnimationScriptInterface)) {
+    return _processFixedValue<T>(key, value);
+    //}
+
+    //throw StateError('Unsupported type for key $key: $T');
+  }
+
+  T _processFixedValue<T>(Object key, T? value) {
     if (T == bool) {
-      final actual = _fixedValues[key];
-      if (actual == null) {
-        _fixedValues[key] = true;
-        return true as T;
-      } else {
-        return actual as T;
-      }
+      final boolValue = value ?? true;
+      _values[key] = boolValue;
+      _streamController.add((key, boolValue));
+      return boolValue as T;
     }
 
-    if (defaultValue == null) {
-      throw StateError('No value found for key $key and no default value provided.');
+    if (T == Curve) {
+      final curveValue = value ?? defaultCurve;
+      _values[key] = curveValue;
+      _streamController.add((key, curveValue));
+      return curveValue as T;
     }
-    if (!isDisposed) {
-      _tracks[key] = _createTrack<T>(defaultValue);
+    if (T == Duration) {
+      final durationValue = value ?? defaultDuration;
+      _values[key] = durationValue;
+      _streamController.add((key, durationValue));
+      return durationValue as T;
     }
-    return defaultValue;
+
+    if (T == AnimationScriptInterface || (value != null && value is AnimationScriptInterface)) {
+      _values[key] = value;
+      _streamController.add((key, value));
+      return value as T;
+    }
+
+    if (value == null) {
+      throw StateError('Value for key $key (type $T) cannot be null');
+    }
+    _values[key] = value;
+    _streamController.add((key, value));
+    return value as T;
   }
 
   /// Anima [key] hacia [value]. La primera vez solo fija el valor inicial
@@ -133,15 +200,26 @@ class AnimationDirector with DisposableMixin, WithLifecycleScopeMixin {
       return;
     }
 
-    if (value.runtimeType == bool) {
-      _fixedValues[key] = value;
+    if (!(value is double || value is Color || value is int || value is num) || value is AnimationScriptInterface) {
+      _values[key] = value;
+      _streamController.add((key, value));
       return;
     }
 
-    final track = _tracks[key];
+    final track = _values[key];
     if (track == null) {
-      _tracks[key] = _createTrack<T>(value);
+      _values[key] = _createTrack<T>(value);
+      _streamController.add((key, value));
       return;
+    }
+
+    if (track is! AnimationTrack) {
+      throw ArgumentError.value(
+        value,
+        'value',
+        'Key $key holds ${track.runtimeType} and cannot animate to ${value.runtimeType}. '
+            'If it should be decimal, initialize it with a double (e.g. 0.0).',
+      );
     }
 
     final Object target = (value is int && track is AnimationTrack<double>) ? value.toDouble() : value;
@@ -169,13 +247,26 @@ class AnimationDirector with DisposableMixin, WithLifecycleScopeMixin {
     if (isDisposed) {
       return;
     }
-    _tracks.putIfAbsent(key, () => AnimationTrack<T>(lerp, initial));
+    _values.putIfAbsent(key, () => AnimationTrack<T>(lerp, initial));
   }
 
-  AnimationTrack<Object?> _createTrack<T>(T value) {
+  AnimationTrack<Object?> _createTrack<T>(T? value) {
     // Números: el tipo estático decide int vs double, porque en web ambos son
     // el mismo número JS y `1.0 is int` da true. Solo un `int` explícito
     // genera una pista entera; num/double/dynamic van a double.
+
+    if (value == null) {
+      if (T == int) {
+        value = 0 as T;
+      } else if (T == double || T == num) {
+        value = 0.0 as T;
+      } else if (T == Color) {
+        value = const Color.fromARGB(0, 0, 0, 0) as T;
+      }
+
+      throw StateError('Value for key cannot be null');
+    }
+
     if (value is num) {
       if (T == int) {
         return AnimationTrack<int>(Lerps.integer, value as int);

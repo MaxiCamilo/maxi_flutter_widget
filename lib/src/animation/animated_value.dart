@@ -33,6 +33,8 @@ final class AnimationTrack<T> {
   Curve _curve = Curves.linear;
   bool _active = false;
 
+  T get initValue => _from;
+
   /// Valor interpolado en el último frame.
   T get current => _current;
 

@@ -5,7 +5,7 @@ import 'package:maxi_flutter_widget/maxi_flutter_widget.dart';
 
 final class ActionAnimationLoop extends AnimationScript {
   final AnimationScript animation;
-  final int iterations;
+  final int iterations;  
 
   const new({required this.animation, this.iterations = 0});
 

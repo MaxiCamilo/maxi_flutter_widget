@@ -8,9 +8,9 @@ final class ActionAnimationScript extends AnimationScript {
   final Curve? curve;
   final Duration? duration;
 
-  const new({required this.values, this.curve, this.duration});
+  const new({this.curve, this.duration,required this.values});
 
-  static AnimationScript express({required Map<Object, dynamic> Function() valuesBuilder, Curve? curve, Duration? duration}) => _ActionScriptExpress(valuesBuilder: valuesBuilder, curve: curve, duration: duration);
+  //static AnimationScript express({required Map<Object, dynamic> Function() valuesBuilder, Curve? curve, Duration? duration}) => _ActionScriptExpress(valuesBuilder: valuesBuilder, curve: curve, duration: duration);
 
   @override
   FutureResult<void> performAnimation({required AnimationDirector director, required ILifecycleScope hearth}) => futureScopeVoid(() async {
@@ -27,16 +27,20 @@ final class ActionAnimationScript extends AnimationScript {
   int get hashCode => Object.hash(values, curve, duration);
 }
 
-final class _ActionScriptExpress extends AnimationScript {
-  final Map<Object, dynamic> Function() valuesBuilder;
+final class ActionScriptExpress extends AnimationScript {
+  final Map<Object, dynamic> Function(AnimationDirector director) valuesBuilder;
   final Curve? curve;
   final Duration? duration;
 
-  const new({required this.valuesBuilder, required this.curve, required this.duration});
+  const new({
+    required this.curve,
+    required this.duration,
+    required this.valuesBuilder,
+  });
 
   @override
   FutureResult<void> performAnimation({required AnimationDirector director, required ILifecycleScope hearth}) {
-    final values = valuesBuilder();
+    final values = valuesBuilder(director);
     for (final entry in values.entries) {
       director.set(entry.key, entry.value, curve: curve, duration: duration);
     }
@@ -45,7 +49,7 @@ final class _ActionScriptExpress extends AnimationScript {
   }
 
   @override
-  operator ==(Object other) => identical(this, other) || (other is _ActionScriptExpress && other.valuesBuilder == valuesBuilder && other.curve == curve && other.duration == duration);
+  operator ==(Object other) => identical(this, other) || (other is ActionScriptExpress && other.valuesBuilder == valuesBuilder && other.curve == curve && other.duration == duration);
   @override
   int get hashCode => Object.hash(valuesBuilder, curve, duration);
 }

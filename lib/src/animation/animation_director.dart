@@ -22,7 +22,7 @@ class AnimationDirector with DisposableMixin, WithLifecycleScopeMixin {
 
   final List<void Function(AnimationDirector)> _listeners = [];
 
-  late final AnimationTrackScheduler _scheduler = heart.attachChild(AnimationTrackScheduler(vsync: vsync, onFrame: _notifyListeners));
+  late final AnimationTrackScheduler _scheduler; /* = heart.attachChild(AnimationTrackScheduler(vsync: vsync, onFrame: _notifyListeners));*/
   late final StreamController<(Object, dynamic)> _streamController;
 
   new({required this.defaultDuration, required this.defaultCurve, required this.vsync}) {
@@ -30,6 +30,8 @@ class AnimationDirector with DisposableMixin, WithLifecycleScopeMixin {
       _listeners.clear();
       _scheduler.dispose();
     });
+
+    _scheduler = heart.attachChild(AnimationTrackScheduler(vsync: vsync, onFrame: _notifyListeners));
 
     _streamController = heart.attachStreamController(StreamController<(Object, dynamic)>.broadcast());
   }
@@ -112,6 +114,13 @@ class AnimationDirector with DisposableMixin, WithLifecycleScopeMixin {
 
   void removeListener(void Function(AnimationDirector) listener) {
     _listeners.remove(listener);
+  }
+
+  T $$<T extends Object>({required Object key, required T Function(T current) updater, Duration? duration, Curve? curve}) {
+    final current = $<T>(key);
+    final updated = updater(current);
+    set(key, updated, duration: duration, curve: curve);
+    return $<T>(key);
   }
 
   /// Valor actual (interpolado) de [key]. Si no existe y se pasa
@@ -234,6 +243,12 @@ class AnimationDirector with DisposableMixin, WithLifecycleScopeMixin {
     }
 
     _scheduler.animate(track, target, duration ?? defaultDuration, curve ?? defaultCurve);
+  }
+
+  void setVarious(Map<Object, dynamic> values, {Duration? duration, Curve? curve}) {
+    for (final entry in values.entries) {
+      set(entry.key, entry.value, duration: duration, curve: curve);
+    }
   }
 
   /// Registra una key de un tipo propio (Offset, Size, Alignment, EdgeInsets…)

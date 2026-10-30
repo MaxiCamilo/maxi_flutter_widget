@@ -12,3 +12,6 @@ export 'animation/functions/animation_state_sequence.dart';
 export 'animation/functions/animation_sequence.dart';
 export 'animation/functions/action_animation_loop.dart';
 export 'animation/functions/waiter_animaation.dart';
+export 'animation/functions/action_animation_one_value.dart';
+
+export 'animation/extensions/animation_director_extensions.dart';

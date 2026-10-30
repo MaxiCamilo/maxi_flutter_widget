@@ -7,7 +7,8 @@ import 'package:maxi_flutter_widget/maxi_flutter_widget.dart';
 
 class MaxiAnimatedContainer extends StatefulWidget {
   final Function(AnimationDirector)? onDirectorReady;
-  final Widget Function(BuildContext builder, AnimationDirector director) childBuilder;
+  final Function(BuildContext context, AnimationDirector director)? onFirstRender;
+  final Widget Function(BuildContext context, AnimationDirector director) childBuilder;
   final AnimationScriptInterface? animation;
   final Symbol? animationKey;
   final Symbol? loopKey;
@@ -21,6 +22,7 @@ class MaxiAnimatedContainer extends StatefulWidget {
     this.animationKey,
     this.loop = false,
     this.loopKey,
+    this.onFirstRender,
   });
 
   @override
@@ -99,6 +101,10 @@ class _MaxiAnimatedContainerState extends ReactiveSingleTickerState<MaxiAnimated
   Widget build(BuildContext context) {
     if (!_firstBuild) {
       _firstBuild = true;
+      if (widget.onFirstRender != null) {
+        widget.onFirstRender!(context, animationDirector);
+      }
+
       if (widget.animation != null) {
         _currentAnimation = widget.animation;
         _startAnimation();

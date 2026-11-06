@@ -8,14 +8,8 @@ class SerialAnimationScript implements AnimationScript {
 
   @override
   FutureResult<void> performancePlay({required MaxiAnimationController controller, required ILifecycleScope scope}) => futureScopeVoid(() async {
-    final initScope = LifecycleScopeFactory();
-    scope.attachHeart(initScope);
-    try {
-      for (int i = 0; i < scripts.length; i++) {
-        await scripts[i].playAndWait(controller: controller, mainScope: initScope);
-      }
-    } finally {
-      initScope.dispose();
+    for (int i = 0; i < scripts.length; i++) {
+      await scripts[i].playAndWait(controller: controller, mainScope: scope);
     }
   });
 }

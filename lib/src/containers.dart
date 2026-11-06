@@ -6,7 +6,5 @@ export 'containers/maxi_scroll.dart';
 export 'containers/maxi_fade_container.dart';
 export 'containers/tracked_scroll_controller.dart';
 
-export 'containers/maxi_child_stack/maxi_posicioned_stack.dart';
-export 'containers/maxi_child_stack/maxi_size_stack.dart';
 export 'containers/parent_constraints.dart';
 export 'containers/custom_align.dart';

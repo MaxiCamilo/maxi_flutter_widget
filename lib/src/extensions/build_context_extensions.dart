@@ -4,6 +4,8 @@ extension BuildContextExtensions on BuildContext {
   Size get screenSize => MediaQuery.of(this).size;
   double get screenWidth => screenSize.width;
   double get screenHeight => screenSize.height;
+  bool get isVertical => screenHeight >= screenWidth;
+  bool get maybeMovilScreen => !isVertical && (screenHeight / screenWidth > 1.5);
 
   double calculateReducedSize({
     required double size,

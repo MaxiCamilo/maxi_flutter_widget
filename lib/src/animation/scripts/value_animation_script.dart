@@ -8,11 +8,18 @@ class ValueAnimationScript implements AnimationScript {
   final Curve? curve;
 
   const new({required this.values, required this.duration, this.curve});
+  const ValueAnimationScript.teleport(this.values) : duration = Duration.zero, curve = null;
 
   @override
   FutureResult<void> performancePlay({required MaxiAnimationController controller, required ILifecycleScope scope}) => futureScopeVoid(() async {
-    for (final value in values.entries) {
-      controller.set(value.key, value.value, duration: duration, curve: curve);
+    if (duration == Duration.zero) {
+      for (final value in values.entries) {
+        controller.jump(value.key, value.value);
+      }
+    } else {
+      for (final value in values.entries) {
+        controller.set(value.key, value.value, duration: duration, curve: curve);
+      }
     }
 
     await scope.wait(duration);

@@ -8,12 +8,6 @@ class ParallelAnimationScript implements AnimationScript {
 
   @override
   FutureResult<void> performancePlay({required MaxiAnimationController controller, required ILifecycleScope scope}) => futureScopeVoid(() async {
-    final initScope = LifecycleScopeFactory();
-    scope.attachHeart(initScope);
-    try {
-      await Future.wait(scripts.map((script) => script.playAndWait(controller: controller, mainScope: initScope)));
-    } finally {
-      initScope.dispose();
-    }
+    await Future.wait(scripts.map((script) => script.playAndWait(controller: controller, mainScope: scope)));
   });
 }

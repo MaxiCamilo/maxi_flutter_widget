@@ -21,11 +21,13 @@ class _MaxiDesignatedAnimationState extends ReactiveSingleTickerState<MaxiDesign
   late MaxiAnimationController controller;
   AnimationScript? script;
   Disposable? currentAnimation;
+  bool isInternalController = false;
 
   @override
-  Result<void> performInitiation() {
-    super.performInitiation();
-    controller = widget.controller ?? MaxiAnimationController();
+  Result<void> performInitiation() => resultScopeVoid(() {
+    super.performInitiation().$;
+    controller = widget.controller ?? heart.attachChild(MaxiAnimationController());
+    isInternalController = widget.controller == null;
     script = widget.script;
 
     if (script != null) {
@@ -33,9 +35,7 @@ class _MaxiDesignatedAnimationState extends ReactiveSingleTickerState<MaxiDesign
         _playAnimation(script);
       });
     }
-
-    return Result.ok;
-  }
+  });
 
   void _playAnimation(AnimationScript? script) {
     if (currentAnimation != null) {
@@ -62,9 +62,15 @@ class _MaxiDesignatedAnimationState extends ReactiveSingleTickerState<MaxiDesign
   void didUpdateWidget(covariant MaxiDesignatedAnimation oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (controller != oldWidget.controller) {
-      log('Warning: Controller changed, test it');
-      controller = widget.controller ?? controller;
-      _playAnimation(script);
+      if (isInternalController && widget.controller != null) {
+        controller.dispose();
+        isInternalController = false;
+        controller = widget.controller!;
+        _playAnimation(script);
+      } else if (!isInternalController && widget.controller != controller) {
+        controller = widget.controller!;
+        _playAnimation(script);
+      }
     } else if (widget.script != oldWidget.script) {
       script = widget.script;
       if (script != null) {

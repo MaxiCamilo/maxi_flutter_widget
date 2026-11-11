@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/widgets.dart';
 import 'package:maxi_dart_framework/maxi_dart_framework.dart';
 import 'package:maxi_flutter_widget/maxi_flutter_widget.dart';

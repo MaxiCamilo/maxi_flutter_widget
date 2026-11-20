@@ -9,13 +9,23 @@ class LoopAnimationScript implements AnimationScript {
 
   @override
   FutureResult<void> performancePlay({required MaxiAnimationController controller, required ILifecycleScope scope}) => futureScopeVoid(() async {
-    if (count == null) {
+    /*if (count == null) {
       while (!scope.isDisposed) {
         await script.playAndWait(controller: controller, mainScope: scope);
       }
     } else {
       for (var i = 0; i < count!; i++) {
         if (scope.isDisposed) break;
+        await script.playAndWait(controller: controller, mainScope: scope);
+      }
+    }*/
+    if (count == null) {
+      while (!scope.isDisposed && !controller.isDisposed) {
+        await script.playAndWait(controller: controller, mainScope: scope);
+      }
+    } else {
+      for (var i = 0; i < count!; i++) {
+        if (scope.isDisposed || controller.isDisposed) break;
         await script.playAndWait(controller: controller, mainScope: scope);
       }
     }

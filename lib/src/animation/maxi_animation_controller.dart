@@ -30,6 +30,7 @@ abstract final class MaxiLerp {
     Alignment: (a, b, t) => Alignment.lerp(a as Alignment, b as Alignment, t)!,
     EdgeInsets: (a, b, t) => EdgeInsets.lerp(a as EdgeInsets, b as EdgeInsets, t)!,
     BorderRadius: (a, b, t) => BorderRadius.lerp(a as BorderRadius, b as BorderRadius, t)!,
+    AlignmentGeometry: (a, b, t) => AlignmentGeometry.lerp(a as AlignmentGeometry, b as AlignmentGeometry, t)!,
   };
 
   /// Registra (o reemplaza) la interpolación de un tipo propio.

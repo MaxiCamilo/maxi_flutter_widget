@@ -36,12 +36,19 @@ class _MaxiDesignatedAnimationState extends ReactiveSingleTickerState<MaxiDesign
   });
 
   void _playAnimation(AnimationScript? script) {
+    /*
     if (currentAnimation != null) {
       currentAnimation!.dispose();
       currentAnimation = null;
     }
 
     if (script == null) return;
+
+    currentAnimation = script.play(controller);*/
+    currentAnimation?.dispose();
+    currentAnimation = null;
+
+    if (script == null || isDisposed) return; // el postFrameCallback puede llegar tarde
 
     currentAnimation = script.play(controller);
   }
@@ -77,5 +84,12 @@ class _MaxiDesignatedAnimationState extends ReactiveSingleTickerState<MaxiDesign
         });
       }
     }
+  }
+
+  @override
+  void performDisposal() {
+    currentAnimation?.dispose();
+    currentAnimation = null;
+    super.performDisposal();
   }
 }

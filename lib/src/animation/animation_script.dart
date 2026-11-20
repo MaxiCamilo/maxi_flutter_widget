@@ -34,6 +34,7 @@ abstract interface class AnimationScript {
 
 extension AnimationScriptExtensions on AnimationScript {
   Future<void> playAndWait({required MaxiAnimationController controller, ILifecycleScope? mainScope}) async {
+    /*
     final scope = LifecycleScopeFactory();
     if (mainScope == null) {
       controller.heart.attachHeart(scope);
@@ -44,13 +45,42 @@ extension AnimationScriptExtensions on AnimationScript {
     final error = result.extractError();
     if (error != null) {
       log('Animation script failed with error: $error');
+    }*/
+    final scope = LifecycleScopeFactory();
+    final parent = mainScope ?? controller.heart;
+
+    if (parent.attachHeart(scope) is NegativeResult) {
+      scope.dispose(); // el padre ya estaba descartado: no arrancar
+      return;
+    }
+
+    final result = await $$(Oration('Failed to play animation script'), () => performancePlay(controller: controller, scope: scope));
+    scope.dispose();
+    final error = result.extractError();
+    if (error != null && !parent.isDisposed) {
+      log('Animation script failed with error: $error');
     }
   }
 
   Disposable play(MaxiAnimationController controller) {
+    /*
     final scope = LifecycleScope();
 
     scheduleMicrotask(() async {
+      if (controller.isDisposed) {
+        log('Controller is disposed, aborting animation script');
+        scope.dispose();
+        return;
+      }
+      await performancePlay(controller: controller, scope: scope).logIfFailure('Failed to play animation script');
+      scope.dispose();
+    });
+
+    return scope;*/
+    final scope = LifecycleScope();
+
+    scheduleMicrotask(() async {
+      if (scope.isDisposed) return; // cancelada antes de arrancar
       if (controller.isDisposed) {
         log('Controller is disposed, aborting animation script');
         scope.dispose();

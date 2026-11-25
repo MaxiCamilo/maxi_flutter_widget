@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/scheduler.dart';
@@ -91,6 +92,8 @@ class MaxiAnimationController with DisposableMixin, WithLifecycleScopeMixin {
   final Map<Object, Object> _values = <Object, Object>{};
   final Map<Object, Set<_KeyObserver>> _observers = <Object, Set<_KeyObserver>>{};
 
+  StreamController<(Object, Object)>? _changeListering;
+
   /// Claves que nunca se animan: un cambio solo reconstruye a quien las escucha.
   final Set<Object> _fixed = <Object>{};
 
@@ -104,8 +107,13 @@ class MaxiAnimationController with DisposableMixin, WithLifecycleScopeMixin {
     return value == null ? null : _coerce<T>(value, key);
   }
 
+  Stream<(Object, Object)> get onChange {
+    _changeListering ??= heart.attachStreamController(StreamController<(Object, Object)>.broadcast());
+    return _changeListering!.stream;
+  }
+
   /// Indica si algún contenedor está escuchando [key] en este momento.
-  bool isListened(Object key) => _observers.containsKey(key);
+  bool isListened(Object key) => _observers.containsKey(key) || (_changeListering != null && _changeListering!.hasListener);
 
   /// Cambia el destino de [key]. Los contenedores que la escuchan animan
   /// desde su valor ACTUAL (aunque estén a mitad de una animación).
@@ -117,6 +125,7 @@ class MaxiAnimationController with DisposableMixin, WithLifecycleScopeMixin {
       return;
     }
     _values[key] = value;
+    _changeListering?.add((key, value));
 
     final observers = _observers[key];
     if (observers == null) {
@@ -153,6 +162,33 @@ class MaxiAnimationController with DisposableMixin, WithLifecycleScopeMixin {
   void setAll(Map<Object, Object> values, {Duration? duration, Curve? curve}) {
     for (final entry in values.entries) {
       set(entry.key, entry.value, duration: duration, curve: curve);
+    }
+  }
+
+  void triggerValue<T extends Object>(Object key, {Duration? duration, Curve? curve}) {
+    final value = _values[key];
+    if (value != null) {
+      if (value is int) {
+        set(key, value + 1, duration: duration, curve: curve);
+      } else if (value is double) {
+        set(key, value + 0.01, duration: duration, curve: curve);
+      } else if (value is bool) {
+        set(key, !value, duration: duration, curve: curve);
+      } else if (value is String) {
+        set(key, '$value ', duration: duration, curve: curve);
+      }
+
+      return;
+    }
+
+    if (T == int) {
+      set(key, 1, duration: duration, curve: curve);
+    } else if (T == double) {
+      set(key, 0.01, duration: duration, curve: curve);
+    } else if (T == bool) {
+      set(key, false, duration: duration, curve: curve);
+    } else if (T == String) {
+      set(key, '', duration: duration, curve: curve);
     }
   }
 
@@ -272,6 +308,21 @@ final class MaxiAnim {
   bool isAnimatingKey(Object key) {
     final track = _state._tracks[key];
     return track != null && _state._clockUs < track.endUs;
+  }
+
+  void setValue(
+    Object key,
+    Object value, {
+    Duration? duration,
+    Curve? curve,
+  }) => controller.set(key, value, duration: duration, curve: curve);
+
+  void triggerValue<T extends Object>(
+    Object key, {
+    Duration? duration,
+    Curve? curve,
+  }) {
+    controller.triggerValue<T>(key, duration: duration, curve: curve);
   }
 }
 

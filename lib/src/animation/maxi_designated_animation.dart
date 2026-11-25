@@ -8,8 +8,11 @@ class MaxiDesignatedAnimation extends StatefulWidget {
   final Widget Function(BuildContext context, MaxiAnim anim) builder;
   final Duration duration;
   final Curve curve;
+  final Object? keyAnimation;
 
-  const MaxiDesignatedAnimation({super.key, this.script, this.controller, required this.builder, this.duration = const Duration(milliseconds: 250), this.curve = Curves.easeInOut});
+  final List<Object> keyWatchRefresh;
+
+  const MaxiDesignatedAnimation({super.key, this.script, this.controller, required this.builder, this.duration = const Duration(milliseconds: 250), this.curve = Curves.easeInOut, this.keyAnimation, this.keyWatchRefresh = const []});
 
   @override
   State<MaxiDesignatedAnimation> createState() => _MaxiDesignatedAnimationState();
@@ -31,6 +34,18 @@ class _MaxiDesignatedAnimationState extends ReactiveSingleTickerState<MaxiDesign
     if (script != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _playAnimation(script);
+      });
+    }
+
+    if (widget.keyWatchRefresh.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || heart.isDisposed) return;
+        controller.onChange.where((event) => widget.keyWatchRefresh.contains(event.$1)).listen((event) {
+          if (!mounted || heart.isDisposed) return;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _playAnimation(script);
+          });
+        });
       });
     }
   });
@@ -72,17 +87,26 @@ class _MaxiDesignatedAnimationState extends ReactiveSingleTickerState<MaxiDesign
         isInternalController = false;
         controller = widget.controller!;
         _playAnimation(script);
+        return;
       } else if (!isInternalController && widget.controller != controller) {
         controller = widget.controller!;
         _playAnimation(script);
+        return;
       }
-    } else if (widget.script != oldWidget.script) {
+    }
+
+    if (widget.script != oldWidget.script) {
       script = widget.script;
       if (script != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _playAnimation(script);
         });
       }
+    }
+    if (widget.keyAnimation != oldWidget.keyAnimation) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _playAnimation(script);
+      });
     }
   }
 

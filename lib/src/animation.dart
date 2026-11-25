@@ -7,3 +7,6 @@ export 'animation/actors/maxi_actor.dart';
 
 export 'animation/maxi_scenario.dart';
 export 'animation/actors/actor_image_widget.dart';
+export 'animation/scripts/key_builder_animation_script.dart';
+
+export 'animation/maxi_animation_play_instance.dart';
